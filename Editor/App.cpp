@@ -144,6 +144,12 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 
 		if (app) {
 			switch (message) {
+			case WM_SETCURSOR:
+				if (LOWORD(lparam) == HTCLIENT) {
+					SetCursor(LoadCursor(nullptr, IDC_IBEAM));
+					return true;
+				}
+				break;
 			case WM_SIZE:
 			{
 				UINT width = LOWORD(lparam);
