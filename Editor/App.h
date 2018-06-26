@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include "Editor.h"
 
 template<class Interface>
 inline void safe_release(Interface **interfaceToRelease) {
@@ -20,8 +21,10 @@ private:
 	HWND hwnd;
 	ID2D1Factory* direct2d_factory;
 	ID2D1HwndRenderTarget* render_target;
-	ID2D1SolidColorBrush* light_slate_gray_brush;
-	ID2D1SolidColorBrush* cornflower_blue_brush;
+	IDWriteFactory* dwrite_factory;
+	IDWriteTextFormat* text_format;
+	ID2D1SolidColorBrush* black_brush;
+	std::unique_ptr<Editor> editor;
 
 	HRESULT create_device_independent_resources();
 	HRESULT create_device_resources();

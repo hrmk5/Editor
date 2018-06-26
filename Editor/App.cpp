@@ -7,15 +7,16 @@ App::App() :
 	hwnd(nullptr),
 	direct2d_factory(nullptr),
 	render_target(nullptr),
-	light_slate_gray_brush(nullptr),
-	cornflower_blue_brush(nullptr) {
+	dwrite_factory(nullptr),
+	text_format(nullptr),
+	editor(nullptr) {
 }
 
 App::~App() {
 	safe_release(&direct2d_factory);
+	safe_release(&dwrite_factory);
+	safe_release(&text_format);
 	safe_release(&render_target);
-	safe_release(&light_slate_gray_brush);
-	safe_release(&cornflower_blue_brush);
 }
 
 void App::run_message_loop() {
@@ -72,10 +73,34 @@ HRESULT App::initialize() {
 }
 
 HRESULT App::create_device_independent_resources() {
-	HRESULT result = S_OK;
-	result = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &direct2d_factory);
+	HRESULT hr = S_OK;
+	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &direct2d_factory);
 
-	return result;
+	if (SUCCEEDED(hr)) {
+		hr = DWriteCreateFactory(
+			DWRITE_FACTORY_TYPE_SHARED, 
+			__uuidof(IDWriteFactory), 
+			reinterpret_cast<IUnknown**>(&dwrite_factory));
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = dwrite_factory->CreateTextFormat(
+			L"Yu Gothic",
+			nullptr,
+			DWRITE_FONT_WEIGHT_REGULAR,
+			DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_STRETCH_NORMAL,
+			17.0f,
+			L"ja-JP",
+			&text_format);
+	}
+
+	if (SUCCEEDED(hr)) {
+		editor = std::make_unique<Editor>(dwrite_factory, text_format);
+		editor->set_text(L"Hello world!");
+	}
+
+	return hr;
 }
 
 HRESULT App::create_device_resources() {
@@ -91,13 +116,6 @@ HRESULT App::create_device_resources() {
 			RenderTargetProperties(),
 			HwndRenderTargetProperties(hwnd, size),
 			&render_target);
-
-		if (SUCCEEDED(result)) {
-			result = render_target->CreateSolidColorBrush(ColorF(ColorF::LightSlateGray), &light_slate_gray_brush);
-		}
-		if (SUCCEEDED(result)) {
-			result = render_target->CreateSolidColorBrush(ColorF(ColorF::CornflowerBlue), &cornflower_blue_brush);
-		}
 	}
 
 	return result;
@@ -105,8 +123,6 @@ HRESULT App::create_device_resources() {
 
 void App::discard_device_resources() {
 	safe_release(&render_target);
-	safe_release(&light_slate_gray_brush);
-	safe_release(&cornflower_blue_brush);
 }
 
 LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -174,47 +190,7 @@ HRESULT App::on_render() {
 		render_target->SetTransform(Matrix3x2F::Identity());
 		render_target->Clear(ColorF(ColorF::White));
 
-		auto rt_size = render_target->GetSize();
-
-		auto width = static_cast<int>(rt_size.width);
-		auto height = static_cast<int>(rt_size.height);
-
-		for (int x = 0; x < width; x += 10)
-		{
-			render_target->DrawLine(
-				D2D1::Point2F(static_cast<FLOAT>(x), 0.0f),
-				D2D1::Point2F(static_cast<FLOAT>(x), rt_size.height),
-				light_slate_gray_brush,
-				0.5f
-			);
-		}
-
-		for (int y = 0; y < height; y += 10)
-		{
-			render_target->DrawLine(
-				D2D1::Point2F(0.0f, static_cast<FLOAT>(y)),
-				D2D1::Point2F(rt_size.width, static_cast<FLOAT>(y)),
-				light_slate_gray_brush,
-				0.5f
-			);
-		}
-
-		D2D1_RECT_F rectangle1 = D2D1::RectF(
-			rt_size.width / 2 - 50.0f,
-			rt_size.height / 2 - 50.0f,
-			rt_size.width / 2 + 50.0f,
-			rt_size.height / 2 + 50.0f
-		);
-
-		D2D1_RECT_F rectangle2 = D2D1::RectF(
-			rt_size.width / 2 - 100.0f,
-			rt_size.height / 2 - 100.0f,
-			rt_size.width / 2 + 100.0f,
-			rt_size.height / 2 + 100.0f
-		);
-
-		render_target->FillRectangle(&rectangle1, light_slate_gray_brush);
-		render_target->DrawRectangle(&rectangle2, cornflower_blue_brush);
+		editor->render(render_target);
 
 		result = render_target->EndDraw();
 		if (result == D2DERR_RECREATE_TARGET) {
