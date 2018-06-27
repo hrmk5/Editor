@@ -24,6 +24,8 @@ void App::run_message_loop() {
 	while (GetMessage(&msg, nullptr, 0, 0)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
+
+		on_render();
 	}
 }
 
@@ -126,67 +128,53 @@ void App::discard_device_resources() {
 }
 
 LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
-	LRESULT result = 0;
-
 	if (message == WM_CREATE) {
 		LPCREATESTRUCT pcs = (LPCREATESTRUCT)lparam;
 		App* app = (App*)pcs->lpCreateParams;
 
 		SetWindowLongPtrW(hwnd, GWLP_USERDATA, PtrToUlong(app));
 
-		result = 1;
+		return 1;
 	}
 	else {
 		App* app = reinterpret_cast<App*>(static_cast<LONG_PTR>(
 			GetWindowLongPtrW(hwnd, GWLP_USERDATA)));
-
-		bool was_handled = false;
 
 		if (app) {
 			switch (message) {
 			case WM_SETCURSOR:
 				if (LOWORD(lparam) == HTCLIENT) {
 					SetCursor(LoadCursor(nullptr, IDC_IBEAM));
-					return true;
+					return 0;
 				}
 				break;
 			case WM_CHAR:
 				app->editor->on_char((wchar_t)wparam);
-			case WM_PAINT:
+				return 0;
+			/*case WM_PAINT:
 				app->on_render();
 				ValidateRect(hwnd, nullptr);
 				result = 0;
 				was_handled = true;
-				break;
+				break;*/
 			case WM_SIZE:
 			{
 				UINT width = LOWORD(lparam);
 				UINT height = HIWORD(lparam);
 				app->on_resize(width, height);
 			}
-
-				result = 0;
-				was_handled = true;
-				break;
+				return 0;
 			case WM_DISPLAYCHANGE:
 				InvalidateRect(hwnd, nullptr, false);
-				result = 0;
-				was_handled = true;
-				break;
+				return 0;
 			case WM_DESTROY:
 				PostQuitMessage(0);
-				result = 1;
-				was_handled = true;
-				break;
+				return 1;
 			}
 		}
 
-		if (!was_handled) {
-			result = DefWindowProc(hwnd, message, wparam, lparam);
-		}
+		return DefWindowProc(hwnd, message, wparam, lparam);
 	}
-
-	return result;
 }
 
 HRESULT App::on_render() {
