@@ -150,6 +150,14 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 					return true;
 				}
 				break;
+			case WM_CHAR:
+				app->editor->on_char((wchar_t)wparam);
+			case WM_PAINT:
+				app->on_render();
+				ValidateRect(hwnd, nullptr);
+				result = 0;
+				was_handled = true;
+				break;
 			case WM_SIZE:
 			{
 				UINT width = LOWORD(lparam);
@@ -162,12 +170,6 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 				break;
 			case WM_DISPLAYCHANGE:
 				InvalidateRect(hwnd, nullptr, false);
-				result = 0;
-				was_handled = true;
-				break;
-			case WM_PAINT:
-				app->on_render();
-				ValidateRect(hwnd, nullptr);
 				result = 0;
 				was_handled = true;
 				break;

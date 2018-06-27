@@ -29,6 +29,8 @@ public:
 	void initialize();
 
 	void set_text(const std::wstring& str);
+	void append_char(wchar_t wchar);
 
 	void render(ID2D1HwndRenderTarget* rt);
+	void on_char(wchar_t character);
 };

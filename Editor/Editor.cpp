@@ -29,6 +29,11 @@ void Editor::set_text(const std::wstring& str) {
 	}
 }
 
+void Editor::append_char(wchar_t wchar) {
+	auto character = create_char(wchar);
+	chars.push_back(character);
+}
+
 Char Editor::create_char(wchar_t character) {
 	Char ch;
 	ch.wchar = character;
@@ -69,4 +74,8 @@ void Editor::render(ID2D1HwndRenderTarget* rt) {
 			x += character.width;
 		}
 	}
+}
+
+void Editor::on_char(wchar_t character) {
+	append_char(character);
 }
