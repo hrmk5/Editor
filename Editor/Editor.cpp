@@ -163,6 +163,12 @@ void Editor::render(ID2D1HwndRenderTarget* rt) {
 			character.x = x;
 			character.y = y;
 			x += character.width;
+
+			// 改行だったら y 座標を更新する
+			if (character.wchar == '\n') {
+				x = 0;
+				y += char_height;
+			}
 		}
 
 		// カーソルを描画
@@ -171,9 +177,8 @@ void Editor::render(ID2D1HwndRenderTarget* rt) {
 				// 文字を描画していない場合は左上に描画
 				render_cursor(rt, 0, 0, brush);
 			} else if (selection.end > (signed int)chars.size()) {
-				// 末尾を選択している場合は 末尾の文字の x 座標 + 末尾の文字の幅 に描画する
-				auto last_char = chars[chars.size() - 1];
-				render_cursor(rt, last_char.x + last_char.width, last_char.y, brush);
+				// 末尾を選択している場合
+				render_cursor(rt, x, y, brush);
 			} else {
 				auto character = chars[selection.end];
 				render_cursor(rt, character.x, character.y, brush);
@@ -198,6 +203,9 @@ void Editor::on_char(wchar_t character) {
 			// 文字列のサイズが 2 未満の場合はすべての文字を削除
 			chars.clear();
 		}
+	} else if (character == '\r') {
+		// エンターキーを押すと \r が入力されるので \n に置き換えて追加
+		append_char('\n');
 	} else {
 		append_char(character);
 	}
