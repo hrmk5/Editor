@@ -91,7 +91,7 @@ HRESULT App::create_device_independent_resources() {
 			MessageBox(hwnd, char_to_wchar(e.what()), L"エディタの初期化に失敗しました", MB_OK | MB_ICONERROR);
 			exit(1);
 		}
-		editor->set_text(L"Hello world!");
+		editor->set_text(L"H");
 	}
 
 	return hr;
@@ -148,6 +148,8 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			case WM_CHAR:
 				app->editor->on_char((wchar_t)wparam);
 				return 0;
+			case WM_SYSCHAR:
+				app->editor->on_char((wchar_t)wparam);
 			/*case WM_PAINT:
 				app->on_render();
 				ValidateRect(hwnd, nullptr);

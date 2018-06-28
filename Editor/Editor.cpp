@@ -167,8 +167,11 @@ void Editor::render(ID2D1HwndRenderTarget* rt) {
 
 		// カーソルを描画
 		if (visible_cursor) {
-			// 末尾を選択している場合は 末尾の文字の x 座標 + 末尾の文字の幅 に描画する
-			if (selection.end > (signed int)chars.size()) {
+			if (chars.empty()) {
+				// 文字を描画していない場合は左上に描画
+				render_cursor(rt, 0, 0, brush);
+			} else if (selection.end > (signed int)chars.size()) {
+				// 末尾を選択している場合は 末尾の文字の x 座標 + 末尾の文字の幅 に描画する
 				auto last_char = chars[chars.size() - 1];
 				render_cursor(rt, last_char.x + last_char.width, last_char.y, brush);
 			} else {
@@ -186,5 +189,16 @@ void Editor::render_cursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Bru
 }
 
 void Editor::on_char(wchar_t character) {
-	append_char(character);
+	if (character == '\b') {
+		// バックスペースキーが押された場合		
+		if (chars.size() > 1) {
+			// 文字列のサイズが 2 以上の場合は末尾の文字を削除する
+			chars.pop_back();
+		} else {
+			// 文字列のサイズが 2 未満の場合はすべての文字を削除
+			chars.clear();
+		}
+	} else {
+		append_char(character);
+	}
 }
