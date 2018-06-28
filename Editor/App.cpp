@@ -8,14 +8,12 @@ App::App() :
 	direct2d_factory(nullptr),
 	render_target(nullptr),
 	dwrite_factory(nullptr),
-	text_format(nullptr),
 	editor(nullptr) {
 }
 
 App::~App() {
 	safe_release(&direct2d_factory);
 	safe_release(&dwrite_factory);
-	safe_release(&text_format);
 	safe_release(&render_target);
 }
 
@@ -86,19 +84,13 @@ HRESULT App::create_device_independent_resources() {
 	}
 
 	if (SUCCEEDED(hr)) {
-		hr = dwrite_factory->CreateTextFormat(
-			L"Yu Gothic",
-			nullptr,
-			DWRITE_FONT_WEIGHT_REGULAR,
-			DWRITE_FONT_STYLE_NORMAL,
-			DWRITE_FONT_STRETCH_NORMAL,
-			17.0f,
-			L"ja-JP",
-			&text_format);
-	}
-
-	if (SUCCEEDED(hr)) {
-		editor = std::make_unique<Editor>(dwrite_factory, text_format);
+		editor = std::make_unique<Editor>(hwnd, dwrite_factory);
+		try {
+			editor->initialize();
+		} catch (const EditorException& e) {
+			MessageBox(hwnd, char_to_wchar(e.what()), L"エディタの初期化に失敗しました", MB_OK | MB_ICONERROR);
+			exit(1);
+		}
 		editor->set_text(L"Hello world!");
 	}
 
@@ -134,6 +126,11 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 
 		SetWindowLongPtrW(hwnd, GWLP_USERDATA, PtrToUlong(app));
 
+		// タイマーを設定
+		for (auto& timer : app->editor->timers) {
+			SetTimer(hwnd, timer.id, timer.elapse, nullptr);
+		}
+
 		return 1;
 	}
 	else {
@@ -163,6 +160,14 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 				UINT height = HIWORD(lparam);
 				app->on_resize(width, height);
 			}
+				return 0;
+			case WM_TIMER:
+				// タイマーの実行
+				for (auto& timer : app->editor->timers) {
+					if (wparam == timer.id) {
+						timer.func();
+					}
+				}
 				return 0;
 			case WM_DISPLAYCHANGE:
 				InvalidateRect(hwnd, nullptr, false);

@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Editor.h"
+#include "Utils.h"
 
 template<class Interface>
 inline void safe_release(Interface **interfaceToRelease) {
@@ -22,7 +23,6 @@ private:
 	ID2D1Factory* direct2d_factory;
 	ID2D1HwndRenderTarget* render_target;
 	IDWriteFactory* dwrite_factory;
-	IDWriteTextFormat* text_format;
 	ID2D1SolidColorBrush* black_brush;
 	std::unique_ptr<Editor> editor;
 
