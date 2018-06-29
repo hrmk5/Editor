@@ -34,45 +34,43 @@ struct Char {
 };
 
 struct EditorOptions {
-	int cursor_blink_rate_msec; // カーソルの点滅速度 (ミリ秒)
-	float cursor_width; // カーソルの幅
-	std::wstring font_name; // フォントの名前
-	float font_size; // フォントサイズ
+	int cursorBlinkRateMsec; // カーソルの点滅速度 (ミリ秒)
+	float cursorWidth; // カーソルの幅
+	std::wstring fontName; // フォントの名前
+	float fontSize; // フォントサイズ
 };
 
-EditorOptions default_editoroptions();
+EditorOptions DefaultEditorOptions();
 
 class Editor {
 private:
 	static constexpr int ID_CURSOR_BLINK_TIMER = 1;
 
 	EditorOptions options;
-	float char_height;
+	float charHeight;
 	std::vector<Char> chars;
 	Selection selection;
 
-	bool visible_cursor;
+	bool visibleCursor;
 	
 	HWND hwnd;
 	IDWriteFactory* factory;
-	IDWriteTextFormat* text_format;
+	IDWriteTextFormat* textFormat;
 
-	DWRITE_FONT_METRICS get_font_metrics();
+	Char CreateChar(wchar_t character);
 
-	Char create_char(wchar_t character);
-
-	void toggle_cursor_visible();
+	void ToggleCursorVisible();
 public:
 	std::vector<Timer> timers;
 
-	Editor(HWND hwnd, IDWriteFactory* factory, const EditorOptions& options = default_editoroptions());
+	Editor(HWND hwnd, IDWriteFactory* factory, const EditorOptions& options = DefaultEditorOptions());
 	~Editor();
-	void initialize();
+	void Initialize();
 
-	void set_text(const std::wstring& str);
-	void append_char(wchar_t wchar);
+	void SetText(const std::wstring& str);
+	void AppendChar(wchar_t wchar);
 
-	void render(ID2D1HwndRenderTarget* rt);
-	void render_cursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brush* brush);
-	void on_char(wchar_t character);
+	void Render(ID2D1HwndRenderTarget* rt);
+	void RenderCursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brush* brush);
+	void OnChar(wchar_t character);
 };

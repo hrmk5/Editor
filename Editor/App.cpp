@@ -5,31 +5,31 @@ using namespace D2D1;
 
 App::App() :
 	hwnd(nullptr),
-	direct2d_factory(nullptr),
-	render_target(nullptr),
-	dwrite_factory(nullptr),
+	direct2dFactory(nullptr),
+	renderTarget(nullptr),
+	dwriteFactory(nullptr),
 	editor(nullptr) {
 }
 
 App::~App() {
-	safe_release(&direct2d_factory);
-	safe_release(&dwrite_factory);
-	safe_release(&render_target);
+	SafeRelease(&direct2dFactory);
+	SafeRelease(&dwriteFactory);
+	SafeRelease(&renderTarget);
 }
 
-void App::run_message_loop() {
+void App::RunMessageLoop() {
 	MSG msg;
 	while (GetMessage(&msg, nullptr, 0, 0)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 
-		on_render();
+		OnRender();
 	}
 }
 
-HRESULT App::initialize() {
+HRESULT App::Initialize() {
 	HRESULT result;
-	result = create_device_independent_resources();
+	result = CreateDeviceIndependentResources();
 
 	if (SUCCEEDED(result)) {
 		WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
@@ -46,7 +46,7 @@ HRESULT App::initialize() {
 		RegisterClassEx(&wcex);
 
 		FLOAT dpi_x, dpi_y;
-		direct2d_factory->GetDesktopDpi(&dpi_x, &dpi_y);
+		direct2dFactory->GetDesktopDpi(&dpi_x, &dpi_y);
 
 		// ウィンドウを作成
 		hwnd = CreateWindow(
@@ -72,40 +72,40 @@ HRESULT App::initialize() {
 	return result;
 }
 
-HRESULT App::create_device_independent_resources() {
+HRESULT App::CreateDeviceIndependentResources() {
 	HRESULT hr = S_OK;
-	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &direct2d_factory);
+	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &direct2dFactory);
 
 	if (SUCCEEDED(hr)) {
 		hr = DWriteCreateFactory(
 			DWRITE_FACTORY_TYPE_SHARED, 
 			__uuidof(IDWriteFactory), 
-			reinterpret_cast<IUnknown**>(&dwrite_factory));
+			reinterpret_cast<IUnknown**>(&dwriteFactory));
 	}
 
 	return hr;
 }
 
-HRESULT App::create_device_resources() {
+HRESULT App::CreateDeviceResources() {
 	HRESULT result = S_OK;
 
-	if (!render_target) {
+	if (!renderTarget) {
 		RECT rc;
 		GetClientRect(hwnd, &rc);
 
 		D2D1_SIZE_U size = D2D1::SizeU(rc.right - rc.left, rc.bottom - rc.top);
 
-		result = direct2d_factory->CreateHwndRenderTarget(
+		result = direct2dFactory->CreateHwndRenderTarget(
 			RenderTargetProperties(),
 			HwndRenderTargetProperties(hwnd, size),
-			&render_target);
+			&renderTarget);
 	}
 
 	return result;
 }
 
-void App::discard_device_resources() {
-	safe_release(&render_target);
+void App::DiscardDeviceResources() {
+	SafeRelease(&renderTarget);
 }
 
 LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -115,14 +115,14 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 
 		SetWindowLongPtrW(hwnd, GWLP_USERDATA, PtrToUlong(app));
 
-		app->editor = std::make_unique<Editor>(hwnd, app->dwrite_factory);
+		app->editor = std::make_unique<Editor>(hwnd, app->dwriteFactory);
 		try {
-			app->editor->initialize();
+			app->editor->Initialize();
 		} catch (const EditorException& e) {
 			MessageBox(hwnd, char_to_wchar(e.what()), L"エディタの初期化に失敗しました", MB_OK | MB_ICONERROR);
 			exit(1);
 		}
-		app->editor->set_text(L"H");
+		app->editor->SetText(L"H");
 
 		// タイマーを設定
 		for (auto& timer : app->editor->timers) {
@@ -144,10 +144,10 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 				}
 				break;
 			case WM_CHAR:
-				app->editor->on_char((wchar_t)wparam);
+				app->editor->OnChar((wchar_t)wparam);
 				return 0;
 			case WM_SYSCHAR:
-				app->editor->on_char((wchar_t)wparam);
+				app->editor->OnChar((wchar_t)wparam);
 			/*case WM_PAINT:
 				app->on_render();
 				ValidateRect(hwnd, nullptr);
@@ -158,7 +158,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			{
 				UINT width = LOWORD(lparam);
 				UINT height = HIWORD(lparam);
-				app->on_resize(width, height);
+				app->OnResize(width, height);
 			}
 				return 0;
 			case WM_TIMER:
@@ -182,29 +182,29 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 	}
 }
 
-HRESULT App::on_render() {
+HRESULT App::OnRender() {
 	HRESULT result = S_OK;
 
-	result = create_device_resources();
+	result = CreateDeviceResources();
 	if (SUCCEEDED(result)) {
-		render_target->BeginDraw();
-		render_target->SetTransform(Matrix3x2F::Identity());
-		render_target->Clear(ColorF(ColorF::White));
+		renderTarget->BeginDraw();
+		renderTarget->SetTransform(Matrix3x2F::Identity());
+		renderTarget->Clear(ColorF(ColorF::White));
 
-		editor->render(render_target);
+		editor->Render(renderTarget);
 
-		result = render_target->EndDraw();
+		result = renderTarget->EndDraw();
 		if (result == D2DERR_RECREATE_TARGET) {
 			result = S_OK;
-			discard_device_resources();
+			DiscardDeviceResources();
 		}
 	}
 
 	return result;
 }
 
-void App::on_resize(UINT width, UINT height) {
-	if (render_target) {
-		render_target->Resize(SizeU(width, height));
+void App::OnResize(UINT width, UINT height) {
+	if (renderTarget) {
+		renderTarget->Resize(SizeU(width, height));
 	}
 }

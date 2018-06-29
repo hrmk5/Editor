@@ -5,7 +5,7 @@
 #include "Utils.h"
 
 template<class Interface>
-inline void safe_release(Interface **interfaceToRelease) {
+inline void SafeRelease(Interface **interfaceToRelease) {
 	if (*interfaceToRelease != nullptr) {
 		(*interfaceToRelease)->Release();
 		(*interfaceToRelease) = nullptr;
@@ -20,22 +20,22 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 class App {
 private:
 	HWND hwnd;
-	ID2D1Factory* direct2d_factory;
-	ID2D1HwndRenderTarget* render_target;
-	IDWriteFactory* dwrite_factory;
-	ID2D1SolidColorBrush* black_brush;
+	ID2D1Factory* direct2dFactory;
+	ID2D1HwndRenderTarget* renderTarget;
+	IDWriteFactory* dwriteFactory;
+	ID2D1SolidColorBrush* blackBrush;
 	std::unique_ptr<Editor> editor;
 
-	HRESULT create_device_independent_resources();
-	HRESULT create_device_resources();
-	void discard_device_resources();
-	HRESULT on_render();
-	void on_resize(UINT width, UINT height);
+	HRESULT CreateDeviceIndependentResources();
+	HRESULT CreateDeviceResources();
+	void DiscardDeviceResources();
+	HRESULT OnRender();
+	void OnResize(UINT width, UINT height);
 	static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 public:
 	App();
 	~App();
 
-	HRESULT initialize();
-	void run_message_loop();
+	HRESULT Initialize();
+	void RunMessageLoop();
 };
