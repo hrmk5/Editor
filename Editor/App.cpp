@@ -83,17 +83,6 @@ HRESULT App::create_device_independent_resources() {
 			reinterpret_cast<IUnknown**>(&dwrite_factory));
 	}
 
-	if (SUCCEEDED(hr)) {
-		editor = std::make_unique<Editor>(hwnd, dwrite_factory);
-		try {
-			editor->initialize();
-		} catch (const EditorException& e) {
-			MessageBox(hwnd, char_to_wchar(e.what()), L"エディタの初期化に失敗しました", MB_OK | MB_ICONERROR);
-			exit(1);
-		}
-		editor->set_text(L"H");
-	}
-
 	return hr;
 }
 
@@ -125,6 +114,15 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 		App* app = (App*)pcs->lpCreateParams;
 
 		SetWindowLongPtrW(hwnd, GWLP_USERDATA, PtrToUlong(app));
+
+		app->editor = std::make_unique<Editor>(hwnd, app->dwrite_factory);
+		try {
+			app->editor->initialize();
+		} catch (const EditorException& e) {
+			MessageBox(hwnd, char_to_wchar(e.what()), L"エディタの初期化に失敗しました", MB_OK | MB_ICONERROR);
+			exit(1);
+		}
+		app->editor->set_text(L"H");
 
 		// タイマーを設定
 		for (auto& timer : app->editor->timers) {
