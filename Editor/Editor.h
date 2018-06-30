@@ -17,6 +17,7 @@ public:
 	UINT id;
 	UINT elapse;
 	TimerFunc func;
+	bool enabled;
 
 	Timer(UINT id, UINT elapse, const TimerFunc& func);
 };
@@ -46,6 +47,8 @@ class Editor {
 private:
 	static constexpr int ID_CURSOR_BLINK_TIMER = 1;
 
+	Timer cursorBlinkTimer;
+
 	EditorOptions options;
 	float charHeight;
 	std::vector<Char> chars;
@@ -62,7 +65,7 @@ private:
 
 	void ToggleCursorVisible();
 public:
-	std::vector<Timer> timers;
+	std::vector<Timer*> timers;
 
 	Editor(HWND hwnd, IDWriteFactory* factory, const EditorOptions& options = DefaultEditorOptions());
 	~Editor();
@@ -78,4 +81,5 @@ public:
 	void OnIMEStartComposition();
 	void OnIMEEndComposition();
 	void OnKeyDown(int keyCode);
+	void OnKeyUp(int keyCode);
 };

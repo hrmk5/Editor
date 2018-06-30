@@ -126,7 +126,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 
 		// タイマーを設定
 		for (auto& timer : app->editor->timers) {
-			SetTimer(hwnd, timer.id, timer.elapse, nullptr);
+			SetTimer(hwnd, timer->id, timer->elapse, nullptr);
 		}
 
 		return 1;
@@ -151,6 +151,9 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			case WM_KEYDOWN:
 				app->editor->OnKeyDown(wparam);
 				return 0;
+			case WM_KEYUP:
+				app->editor->OnKeyUp(wparam);
+				return 0;
 			case WM_IME_STARTCOMPOSITION:
 				app->editor->OnIMEStartComposition();
 				break;
@@ -170,8 +173,8 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			case WM_TIMER:
 				// タイマーの実行
 				for (auto& timer : app->editor->timers) {
-					if (wparam == timer.id) {
-						timer.func();
+					if (wparam == timer->id && timer->enabled) {
+						timer->func();
 					}
 				}
 				return 0;

@@ -7,7 +7,8 @@ using namespace D2D1;
 Timer::Timer(UINT id, UINT elapse, const TimerFunc & func) :
 	id(id),
 	elapse(elapse),
-	func(func) {
+	func(func),
+	enabled(true) {
 }
 
 EditorOptions DefaultEditorOptions() {
@@ -26,7 +27,9 @@ Editor::Editor(HWND hwnd, IDWriteFactory* factory, const EditorOptions& options)
 	textFormat(nullptr),
 	options(options),
 	visibleCursor(true),
-	compositionStringLength(-1) {
+	compositionStringLength(-1),
+	// カーソルを点滅させるタイマー
+	cursorBlinkTimer(ID_CURSOR_BLINK_TIMER, options.cursorBlinkRateMsec, std::bind(&Editor::ToggleCursorVisible, this)) {
 }
 
 Editor::~Editor() {
@@ -68,8 +71,8 @@ void Editor::Initialize() {
 		layout->Release();
 	}
 	
-	// カーソルを点滅させるタイマーの設定
-	timers.push_back(Timer(ID_CURSOR_BLINK_TIMER, options.cursorBlinkRateMsec, std::bind(&Editor::ToggleCursorVisible, this)));
+	// タイマーの設定
+	timers.push_back(&cursorBlinkTimer);
 }
 
 void Editor::SetText(const std::wstring& str) {
@@ -237,15 +240,31 @@ void Editor::OnIMEEndComposition() {
 void Editor::OnKeyDown(int keyCode) {
 	switch (keyCode) {
 	case VK_LEFT:
+		// カーソルを表示させて、点滅を停止する
+		cursorBlinkTimer.enabled = false;
+		visibleCursor = true;
 		if (selection.end > 0) {
 			selection.end -= 1;
 			selection.start = selection.end;
 		}
 		break;
 	case VK_RIGHT:
+		// カーソルを表示させて、点滅を停止する
+		cursorBlinkTimer.enabled = false;
+		visibleCursor = true;
 		if (selection.end < chars.size()) {
 			selection.end += 1;
 			selection.start = selection.end;
 		}
+		break;
+	}
+}
+
+void Editor::OnKeyUp(int keyCode) {
+	switch (keyCode) {
+	case VK_LEFT:
+	case VK_RIGHT:
+		cursorBlinkTimer.enabled = true;
+		break;
 	}
 }
