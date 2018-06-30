@@ -237,20 +237,18 @@ void Editor::OnIMEEndComposition() {
 }
 
 void Editor::OnKeyDown(int keyCode) {
+	// カーソルを表示させて点滅を停止する
+	cursorBlinkTimer.enabled = false;
+	visibleCursor = true;
+
 	switch (keyCode) {
 	case VK_LEFT:
-		// カーソルを表示させて、点滅を停止する
-		cursorBlinkTimer.enabled = false;
-		visibleCursor = true;
 		if (selection.end > 0) {
 			selection.end -= 1;
 			selection.start = selection.end;
 		}
 		break;
 	case VK_RIGHT:
-		// カーソルを表示させて、点滅を停止する
-		cursorBlinkTimer.enabled = false;
-		visibleCursor = true;
 		if (selection.end < chars.size()) {
 			selection.end += 1;
 			selection.start = selection.end;
@@ -260,10 +258,5 @@ void Editor::OnKeyDown(int keyCode) {
 }
 
 void Editor::OnKeyUp(int keyCode) {
-	switch (keyCode) {
-	case VK_LEFT:
-	case VK_RIGHT:
-		cursorBlinkTimer.enabled = true;
-		break;
-	}
+	cursorBlinkTimer.enabled = true;
 }
