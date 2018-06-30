@@ -146,13 +146,13 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			case WM_CHAR:
 			case WM_SYSCHAR:
 			case WM_IME_CHAR:
-				app->editor->OnChar((wchar_t)wparam);
+				app->editor->OnChar(static_cast<wchar_t>(wparam));
 				return 0;
 			case WM_KEYDOWN:
-				app->editor->OnKeyDown(wparam);
+				app->editor->OnKeyDown(static_cast<int>(wparam));
 				return 0;
 			case WM_KEYUP:
-				app->editor->OnKeyUp(wparam);
+				app->editor->OnKeyUp(static_cast<int>(wparam));
 				return 0;
 			case WM_IME_STARTCOMPOSITION:
 				app->editor->OnIMEStartComposition();

@@ -55,13 +55,13 @@ void Editor::Initialize() {
 			+ fontName + "', font size: " + std::to_string(options.fontSize));
 	}
 
-	textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, options.fontSize / 0.8, options.fontSize);
+	textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, options.fontSize / 0.8f, options.fontSize);
 
 	// 文字の高さを測定
 	IDWriteTextLayout* layout;
 	// IDWriteTextLayout を作成
 	auto testText = L"abcdefghijklnmopqrstuvwxyzABCDEFGHIJKLNMOPQRSTUVWXYZあいうえお漢字汉字繁體字";
-	auto result = factory->CreateTextLayout(testText, wcslen(testText), textFormat, 100000000, 1000, &layout);
+	auto result = factory->CreateTextLayout(testText, static_cast<UINT32>(wcslen(testText)), textFormat, 100000000, 1000, &layout);
 	if (SUCCEEDED(result)) {
 		DWRITE_TEXT_METRICS metrics;
 		layout->GetMetrics(&metrics);
@@ -88,8 +88,8 @@ void Editor::AppendChar(wchar_t wchar) {
 	auto character = CreateChar(wchar);
 	chars.push_back(character);
 
-	selection.start = chars.size();
-	selection.end = chars.size();
+	selection.start = static_cast<int>(chars.size());
+	selection.end = static_cast<int>(chars.size());
 }
 
 Char Editor::CreateChar(wchar_t character) {
@@ -200,12 +200,14 @@ void Editor::OnIMEComposition() {
 	wchar_t* buf = new wchar_t[size];
 	auto result = ImmGetCompositionString(imc, GCS_COMPSTR, buf, bytes);
 	if (result == IMM_ERROR_NODATA) {
-		MessageBox(hwnd, rswprintf(L"エラーが発生しました: IMM_ERROR_NODATA (%d)", result), L"エラー", MB_OK | MB_ICONERROR);
+		MessageBox(hwnd, rswprintf(L"エラーが発生しました: IMM_ERROR_NODATA (%d)", result).c_str(), L"エラー", MB_OK | MB_ICONERROR);
 		return;
 	} else if (result == IMM_ERROR_GENERAL) {
-		MessageBox(hwnd, rswprintf(L"エラーが発生しました: IMM_ERROR_GENERAL (%d)", result), L"エラー", MB_OK | MB_ICONERROR);
+		MessageBox(hwnd, rswprintf(L"エラーが発生しました: IMM_ERROR_GENERAL (%d)", result).c_str(), L"エラー", MB_OK | MB_ICONERROR);
 		return;
 	}
+
+	std::wcout << rswprintf(L"ajioefjjあは%d", 6) << std::endl;
 
 	// 以前挿入した未確定文字列を削除
 	if (compositionStringLength != -1) {
@@ -223,7 +225,7 @@ void Editor::OnIMEComposition() {
 	}
 
 	// 未確定文字列の長さを保存
-	compositionStringLength = str.length();
+	compositionStringLength = static_cast<int>(str.length());
 
 	ImmReleaseContext(hwnd, imc);
 	delete[] buf;
