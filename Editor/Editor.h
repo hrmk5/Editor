@@ -50,6 +50,7 @@ private:
 	float charHeight;
 	std::vector<Char> chars;
 	Selection selection;
+	int compositionStringLength;
 
 	bool visibleCursor;
 	
@@ -73,4 +74,7 @@ public:
 	void Render(ID2D1HwndRenderTarget* rt);
 	void RenderCursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brush* brush);
 	void OnChar(wchar_t character);
+	void OnIMEComposition();
+	void OnIMEStartComposition();
+	void OnIMEEndComposition();
 };

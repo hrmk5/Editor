@@ -113,7 +113,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 		LPCREATESTRUCT pcs = (LPCREATESTRUCT)lparam;
 		App* app = (App*)pcs->lpCreateParams;
 
-		SetWindowLongPtrW(hwnd, GWLP_USERDATA, PtrToUlong(app));
+		SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(app));
 
 		app->editor = std::make_unique<Editor>(hwnd, app->dwriteFactory);
 		try {
@@ -133,7 +133,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 	}
 	else {
 		App* app = reinterpret_cast<App*>(static_cast<LONG_PTR>(
-			GetWindowLongPtrW(hwnd, GWLP_USERDATA)));
+			GetWindowLongPtr(hwnd, GWLP_USERDATA)));
 
 		if (app) {
 			switch (message) {
@@ -144,16 +144,19 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 				}
 				break;
 			case WM_CHAR:
+			case WM_SYSCHAR:
+			case WM_IME_CHAR:
 				app->editor->OnChar((wchar_t)wparam);
 				return 0;
-			case WM_SYSCHAR:
-				app->editor->OnChar((wchar_t)wparam);
-			/*case WM_PAINT:
-				app->on_render();
-				ValidateRect(hwnd, nullptr);
-				result = 0;
-				was_handled = true;
-				break;*/
+			case WM_IME_STARTCOMPOSITION:
+				app->editor->OnIMEStartComposition();
+				break;
+			case WM_IME_COMPOSITION:
+				app->editor->OnIMEComposition();
+				break;
+			case WM_IME_ENDCOMPOSITION:
+				app->editor->OnIMEEndComposition();
+				break;
 			case WM_SIZE:
 			{
 				UINT width = LOWORD(lparam);
