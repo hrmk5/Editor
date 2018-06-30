@@ -2,7 +2,6 @@
 #include "Editor.h"
 #include "Utils.h"
 
-using namespace std;
 using namespace D2D1;
 
 Timer::Timer(UINT id, UINT elapse, const TimerFunc & func) :
@@ -188,7 +187,7 @@ void Editor::OnChar(wchar_t character) {
 void Editor::OnIMEComposition() {
 	auto imc = ImmGetContext(hwnd);
 	if (!imc) {
-		wcout << L"Unable to get imm context" << endl;
+		std::wcout << L"Unable to get imm context" << std::endl;
 		return;
 	}
 
@@ -233,4 +232,20 @@ void Editor::OnIMEStartComposition() {
 
 void Editor::OnIMEEndComposition() {
 	compositionStringLength = -1;
+}
+
+void Editor::OnKeyDown(int keyCode) {
+	switch (keyCode) {
+	case VK_LEFT:
+		if (selection.end > 0) {
+			selection.end -= 1;
+			selection.start = selection.end;
+		}
+		break;
+	case VK_RIGHT:
+		if (selection.end < chars.size()) {
+			selection.end += 1;
+			selection.start = selection.end;
+		}
+	}
 }

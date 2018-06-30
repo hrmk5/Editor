@@ -77,4 +77,5 @@ public:
 	void OnIMEComposition();
 	void OnIMEStartComposition();
 	void OnIMEEndComposition();
+	void OnKeyDown(int keyCode);
 };
