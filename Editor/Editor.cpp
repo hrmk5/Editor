@@ -169,21 +169,20 @@ void Editor::RenderCursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brus
 
 void Editor::OnChar(wchar_t character) {
 	if (character == '\b') {
-		// バックスペースキーが押された場合		
-		if (chars.size() > 1) {
-			// 文字列のサイズが 2 以上の場合は末尾の文字を削除する
-			chars.pop_back();
-		} else {
-			// 文字列のサイズが 2 未満の場合はすべての文字を削除
-			chars.clear();
+		// バックスペースキーが押された場合はカーソルの前の文字を削除する
+		if (selection.end > 0) {
+			chars.erase(chars.begin() + selection.end - 1);
+			selection.end--;
 		}
-
-		selection.end--;
 	} else if (character == '\r') {
 		// エンターキーを押すと \r が入力されるので \n に置き換えて追加
-		AppendChar('\n');
+		//AppendChar('\n');
+		chars.insert(chars.begin() + selection.end, CreateChar('\n'));
+		selection.end++;
 	} else {
-		AppendChar(character);
+		//AppendChar(character);
+		chars.insert(chars.begin() + selection.end, CreateChar(character));
+		selection.end++;
 	}
 }
 
