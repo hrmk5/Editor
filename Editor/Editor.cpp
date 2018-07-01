@@ -207,11 +207,11 @@ void Editor::OnIMEComposition() {
 		return;
 	}
 
-	std::wcout << rswprintf(L"ajioefjjあは%d", 6) << std::endl;
-
-	// 以前挿入した未確定文字列を削除
 	if (compositionStringLength != -1) {
-		chars.erase(chars.begin() + selection.end, chars.begin() + selection.end  + compositionStringLength);
+		// カーソル位置を以前の位置に戻す
+		selection.end -= compositionStringLength;
+		// 以前挿入した未確定文字列を削除
+		chars.erase(chars.begin() + selection.end, chars.begin() + selection.end  + compositionStringLength);	
 	}
 
 	// 未確定文字列を挿入
@@ -226,6 +226,8 @@ void Editor::OnIMEComposition() {
 
 	// 未確定文字列の長さを保存
 	compositionStringLength = static_cast<int>(str.length());
+	// カーソルを未確定文字列の長さの分進める
+	selection.end += compositionStringLength;
 
 	ImmReleaseContext(hwnd, imc);
 	delete[] buf;
