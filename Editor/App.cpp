@@ -173,6 +173,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 					app->editor->OnQueryCharPosition(reinterpret_cast<IMECHARPOSITION*>(lparam));
 					return 1;
 				}
+				break;
 			case WM_IME_STARTCOMPOSITION:
 				app->editor->OnIMEStartComposition();
 				break;

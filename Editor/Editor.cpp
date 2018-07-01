@@ -256,13 +256,8 @@ void Editor::OnIMEComposition(LPARAM lparam) {
 	}
 
 	if (lparam & GCS_CURSORPOS) {
-		CANDIDATEFORM form;
-		form.dwIndex = 0;
-		form.dwStyle = CFS_FORCE_POSITION;
-		form.ptCurrentPos.x = caret.x;
-		form.ptCurrentPos.y = caret.y + charHeight;
-
-		ImmSetCandidateWindow(imc, &form);
+		int cursor = ImmGetCompositionString(imc, GCS_CURSORPOS, NULL, 0);
+		//std::wcout << cursor << std::endl;
 	}
 
 	if (lparam & GCS_COMPSTR || lparam & GCS_RESULTSTR) {
@@ -281,8 +276,10 @@ void Editor::OnIMEComposition(LPARAM lparam) {
 		}
 
 		if (compositionStringLength != -1) {
+			// FIXME: エンターキーを押さずに続けて入力した時にカーソルを動かすと、以前変換した文字に重なってしまう
 			// カーソル位置を以前の位置に戻す
-			selection.end -= compositionStringLength;
+			// selection.end -= compositionStringLength;
+
 			// 以前挿入した未確定文字列を削除
 			chars.erase(chars.begin() + selection.end, chars.begin() + selection.end + compositionStringLength);
 		}
@@ -299,8 +296,10 @@ void Editor::OnIMEComposition(LPARAM lparam) {
 
 		// 未確定文字列の長さを保存
 		compositionStringLength = static_cast<int>(str.length());
+
+		// FIXME: エンターキーを押さずに続けて入力した時にカーソルを動かすと、以前変換した文字に重なってしまう
 		// カーソルを未確定文字列の長さの分進める
-		selection.end += compositionStringLength;
+		// selection.end += compositionStringLength;
 
 		delete[] buf;
 	}
@@ -309,17 +308,6 @@ void Editor::OnIMEComposition(LPARAM lparam) {
 }
 
 void Editor::OnIMEStartComposition() {
-	auto imc = ImmGetContext(hwnd);
-
-	CANDIDATEFORM form;
-	form.dwIndex = 0;
-	form.dwStyle = CFS_FORCE_POSITION;
-	form.ptCurrentPos.x = caret.x;
-	form.ptCurrentPos.y = caret.y + charHeight;
-
-	ImmSetCandidateWindow(imc, &form);
-
-	ImmReleaseContext(hwnd, imc);
 }
 
 void Editor::OnIMEEndComposition() {
