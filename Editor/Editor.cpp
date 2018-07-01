@@ -26,7 +26,6 @@ Editor::Editor(HWND hwnd, IDWriteFactory* factory, const EditorOptions& options)
 	factory(factory),
 	textFormat(nullptr),
 	options(options),
-	visibleCursor(true),
 	compositionStringLength(-1),
 	// カーソルを点滅させるタイマー
 	cursorBlinkTimer(ID_CURSOR_BLINK_TIMER, options.cursorBlinkRateMsec, std::bind(&Editor::ToggleCursorVisible, this)) {
@@ -134,7 +133,7 @@ Char Editor::CreateChar(wchar_t character) {
 }
 
 void Editor::ToggleCursorVisible() {
-	visibleCursor = !visibleCursor;
+	caret.visible = !caret.visible;
 }
 
 void Editor::Render(ID2D1HwndRenderTarget* rt) {
@@ -165,17 +164,23 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 			}
 		}
 
-		// カーソルを描画
-		if (visibleCursor) {
+		// キャレットを描画
+		if (caret.visible) {
 			if (chars.empty()) {
 				// 文字を描画していない場合は左上に描画
 				RenderCursor(rt, 0, 0, brush);
+				caret.x = 0;
+				caret.y = 0;
 			} else if (selection.end >= static_cast<signed int>(chars.size())) {
 				// 末尾を選択している場合
 				RenderCursor(rt, x, y, brush);
+				caret.x = x;
+				caret.y = y;
 			} else {
 				auto character = chars[selection.end];
 				RenderCursor(rt, character.x, character.y, brush);
+				caret.x = character.x;
+				caret.y = character.y;
 			}
 		}
 	}
@@ -206,54 +211,115 @@ void Editor::OnChar(wchar_t character) {
 	}
 }
 
-void Editor::OnIMEComposition() {
+void Editor::OnOpenCandidate() {
+	// 候補ウィンドウが開いた時に呼ばれる
+
+	auto imc = ImmGetContext(hwnd);
+
+	// 候補ウィンドウを位置を指定して設定
+	CANDIDATEFORM form;
+	form.dwIndex = 0;
+	form.dwStyle = CFS_FORCE_POSITION;
+	form.ptCurrentPos.x = caret.x;
+	form.ptCurrentPos.y = caret.y + charHeight;
+
+	ImmSetCandidateWindow(imc, &form);
+
+	ImmReleaseContext(hwnd, imc);
+}
+
+void Editor::OnQueryCharPosition(IMECHARPOSITION* pos) {
+	// 文字の位置を設定する
+
+	// 文字が描画される範囲をスクリーン座標で指定する
+	RECT rcClient;
+	GetClientRect(hwnd, &rcClient);
+	ClientToScreen(hwnd, reinterpret_cast<POINT*>(&rcClient.left));
+	ClientToScreen(hwnd, reinterpret_cast<POINT*>(&rcClient.right));
+	pos->rcDocument = rcClient;
+
+	// 行の高さ
+	pos->cLineHeight = charHeight;
+
+	// 文字の位置をスクリーン座標で指定する
+	pos->pt.x = caret.x;
+	pos->pt.y = caret.y;
+	ClientToScreen(hwnd, &pos->pt);
+}
+
+
+void Editor::OnIMEComposition(LPARAM lparam) {
 	auto imc = ImmGetContext(hwnd);
 	if (!imc) {
 		std::wcout << L"Unable to get imm context" << std::endl;
 		return;
 	}
 
-	// 未確定文字列を取得
-	auto bytes = ImmGetCompositionString(imc, GCS_COMPSTR, NULL, 0);
-	auto size = bytes / sizeof(wchar_t);
+	if (lparam & GCS_CURSORPOS) {
+		CANDIDATEFORM form;
+		form.dwIndex = 0;
+		form.dwStyle = CFS_FORCE_POSITION;
+		form.ptCurrentPos.x = caret.x;
+		form.ptCurrentPos.y = caret.y + charHeight;
 
-	wchar_t* buf = new wchar_t[size];
-	auto result = ImmGetCompositionString(imc, GCS_COMPSTR, buf, bytes);
-	if (result == IMM_ERROR_NODATA) {
-		MessageBox(hwnd, rswprintf(L"エラーが発生しました: IMM_ERROR_NODATA (%d)", result).c_str(), L"エラー", MB_OK | MB_ICONERROR);
-		return;
-	} else if (result == IMM_ERROR_GENERAL) {
-		MessageBox(hwnd, rswprintf(L"エラーが発生しました: IMM_ERROR_GENERAL (%d)", result).c_str(), L"エラー", MB_OK | MB_ICONERROR);
-		return;
+		ImmSetCandidateWindow(imc, &form);
 	}
 
-	if (compositionStringLength != -1) {
-		// カーソル位置を以前の位置に戻す
-		selection.end -= compositionStringLength;
-		// 以前挿入した未確定文字列を削除
-		chars.erase(chars.begin() + selection.end, chars.begin() + selection.end  + compositionStringLength);	
+	if (lparam & GCS_COMPSTR || lparam & GCS_RESULTSTR) {
+		// 未確定文字列を取得
+		auto bytes = ImmGetCompositionString(imc, GCS_COMPSTR, NULL, 0);
+		auto size = bytes / sizeof(wchar_t);
+
+		wchar_t* buf = new wchar_t[size];
+		auto result = ImmGetCompositionString(imc, GCS_COMPSTR, buf, bytes);
+		if (result == IMM_ERROR_NODATA) {
+			MessageBox(hwnd, rswprintf(L"エラーが発生しました: IMM_ERROR_NODATA (%d)", result).c_str(), L"エラー", MB_OK | MB_ICONERROR);
+			return;
+		} else if (result == IMM_ERROR_GENERAL) {
+			MessageBox(hwnd, rswprintf(L"エラーが発生しました: IMM_ERROR_GENERAL (%d)", result).c_str(), L"エラー", MB_OK | MB_ICONERROR);
+			return;
+		}
+
+		if (compositionStringLength != -1) {
+			// カーソル位置を以前の位置に戻す
+			selection.end -= compositionStringLength;
+			// 以前挿入した未確定文字列を削除
+			chars.erase(chars.begin() + selection.end, chars.begin() + selection.end + compositionStringLength);
+		}
+
+		// 未確定文字列を挿入
+		auto str = std::wstring(buf, size);
+
+		int i = 0;
+		for (auto& c : str) {
+			auto ch = CreateChar(c);
+			chars.insert(chars.begin() + selection.end + i, ch);
+			i++;
+		}
+
+		// 未確定文字列の長さを保存
+		compositionStringLength = static_cast<int>(str.length());
+		// カーソルを未確定文字列の長さの分進める
+		selection.end += compositionStringLength;
+
+		delete[] buf;
 	}
-
-	// 未確定文字列を挿入
-	auto str = std::wstring(buf, size);
-
-	int i = 0;
-	for (auto& c : str) {
-		auto ch = CreateChar(c);
-		chars.insert(chars.begin() + selection.end + i, ch);
-		i++;
-	}
-
-	// 未確定文字列の長さを保存
-	compositionStringLength = static_cast<int>(str.length());
-	// カーソルを未確定文字列の長さの分進める
-	selection.end += compositionStringLength;
 
 	ImmReleaseContext(hwnd, imc);
-	delete[] buf;
 }
 
 void Editor::OnIMEStartComposition() {
+	auto imc = ImmGetContext(hwnd);
+
+	CANDIDATEFORM form;
+	form.dwIndex = 0;
+	form.dwStyle = CFS_FORCE_POSITION;
+	form.ptCurrentPos.x = caret.x;
+	form.ptCurrentPos.y = caret.y + charHeight;
+
+	ImmSetCandidateWindow(imc, &form);
+
+	ImmReleaseContext(hwnd, imc);
 }
 
 void Editor::OnIMEEndComposition() {
@@ -263,7 +329,7 @@ void Editor::OnIMEEndComposition() {
 void Editor::OnKeyDown(int keyCode) {
 	// カーソルを表示させて点滅を停止する
 	cursorBlinkTimer.enabled = false;
-	visibleCursor = true;
+	caret.visible = true;
 
 	switch (keyCode) {
 	case VK_LEFT:

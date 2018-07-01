@@ -157,11 +157,27 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			case WM_LBUTTONDOWN:
 				app->editor->OnLButtonDown(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
 				return 0;
+			case WM_IME_SETCONTEXT:
+				lparam &= ~ISC_SHOWUICOMPOSITIONWINDOW;
+				return 0;
+			case WM_IME_NOTIFY:
+				switch (wparam) {
+				case IMN_OPENCANDIDATE:
+					app->editor->OnOpenCandidate();
+					return 0;
+				}
+				break;
+			case WM_IME_REQUEST:
+				switch (wparam) {
+				case IMR_QUERYCHARPOSITION:
+					app->editor->OnQueryCharPosition(reinterpret_cast<IMECHARPOSITION*>(lparam));
+					return 1;
+				}
 			case WM_IME_STARTCOMPOSITION:
 				app->editor->OnIMEStartComposition();
 				break;
 			case WM_IME_COMPOSITION:
-				app->editor->OnIMEComposition();
+				app->editor->OnIMEComposition(lparam);
 				break;
 			case WM_IME_ENDCOMPOSITION:
 				app->editor->OnIMEEndComposition();

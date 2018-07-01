@@ -27,6 +27,12 @@ struct Selection {
 	int end;
 };
 
+struct Caret {
+	float x;
+	float y;
+	bool visible;
+};
+
 struct Char {
 	float x;
 	float y;
@@ -52,10 +58,9 @@ private:
 	EditorOptions options;
 	float charHeight;
 	std::vector<Char> chars;
+	Caret caret;
 	Selection selection;
 	int compositionStringLength;
-
-	bool visibleCursor;
 	
 	HWND hwnd;
 	IDWriteFactory* factory;
@@ -78,7 +83,9 @@ public:
 	void Render(ID2D1HwndRenderTarget* rt);
 	void RenderCursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brush* brush);
 	void OnChar(wchar_t character);
-	void OnIMEComposition();
+	void OnOpenCandidate();
+	void OnQueryCharPosition(IMECHARPOSITION* ptr);
+	void OnIMEComposition(LPARAM lparam);
 	void OnIMEStartComposition();
 	void OnIMEEndComposition();
 	void OnKeyDown(int keyCode);
