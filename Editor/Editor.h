@@ -73,6 +73,7 @@ public:
 
 	void SetText(const std::wstring& str);
 	void AppendChar(wchar_t wchar);
+	int findIndexByPosition(float x, float y);
 
 	void Render(ID2D1HwndRenderTarget* rt);
 	void RenderCursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brush* brush);
@@ -82,4 +83,5 @@ public:
 	void OnIMEEndComposition();
 	void OnKeyDown(int keyCode);
 	void OnKeyUp(int keyCode);
+	void OnLButtonDown(float x, float y);
 };

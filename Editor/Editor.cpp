@@ -92,6 +92,26 @@ void Editor::AppendChar(wchar_t wchar) {
 	selection.end = static_cast<int>(chars.size());
 }
 
+int Editor::findIndexByPosition(float x, float y) {
+	int index = 0;
+	for (auto&& character : chars) {
+		// 同じ行かどうか
+		if (y >= character.y && y <= character.y + charHeight) {
+			if (x >= character.x && x <= character.x + character.width / 2) {
+				// 左半分だった場合
+				return index;
+			} else if (x >= character.x + character.width / 2 && x <= character.x + character.width) {
+				// 右半分だった場合
+				return index + 1;
+			}
+		}
+
+		index++;
+	}
+
+	return -1;
+}
+
 Char Editor::CreateChar(wchar_t character) {
 	Char ch;
 	ch.wchar = character;
@@ -263,4 +283,13 @@ void Editor::OnKeyDown(int keyCode) {
 
 void Editor::OnKeyUp(int keyCode) {
 	cursorBlinkTimer.enabled = true;
+}
+
+void Editor::OnLButtonDown(float x, float y) {
+	// クリックされた位置から文字のインデックスを探す
+	int index = findIndexByPosition(x, y);
+	// 文字が見つかったらカーソルを動かす
+	if (index != -1) {
+		selection.end = index;
+	}
 }
