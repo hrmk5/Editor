@@ -27,6 +27,7 @@ Editor::Editor(HWND hwnd, IDWriteFactory* factory, const EditorOptions& options)
 	textFormat(nullptr),
 	options(options),
 	compositionStringLength(-1),
+	compositionTextPos(-1),
 	// カーソルを点滅させるタイマー
 	cursorBlinkTimer(ID_CURSOR_BLINK_TIMER, options.cursorBlinkRateMsec, std::bind(&Editor::ToggleCursorVisible, this)) {
 }
@@ -138,30 +139,29 @@ void Editor::ToggleCursorVisible() {
 
 void Editor::Render(ID2D1HwndRenderTarget* rt) {
 	ID2D1SolidColorBrush* brush;
+	ID2D1SolidColorBrush* compositionCharBrush = nullptr;
 	HRESULT hr = rt->CreateSolidColorBrush(ColorF(ColorF::Black), &brush);
+
+	if (SUCCEEDED(hr)) {
+		hr = rt->CreateSolidColorBrush(ColorF(ColorF::LightGray), &compositionCharBrush);
+	}
 
 	if (SUCCEEDED(hr)) {
 		float x = 0;
 		float y = 0;
 		std::size_t i = 0;
 		for (auto& character : chars) {
-			// 文字を描画
-			rt->DrawText(
-				&character.wchar,
-				1,
-				textFormat,
-				&RectF(x, y, x + character.width, y + charHeight),
-				brush);
-
-			character.x = x;
-			character.y = y;
-			x += character.width;
-
-			// 改行だったら y 座標を更新する
-			if (character.wchar == '\n') {
-				x = 0;
-				y += charHeight;
+			// 未確定文字列を描画
+			if (compositionTextPos != -1 && i == compositionTextPos) {
+				for (auto& compositionChar : compositionChars) {
+					RenderChar(rt, &compositionChar, &x, &y, brush);
+				}
 			}
+
+			// 文字を描画
+			RenderChar(rt, &character, &x, &y, brush);
+
+			i++;
 		}
 
 		// キャレットを描画
@@ -183,6 +183,26 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 				caret.y = character.y;
 			}
 		}
+	}
+}
+
+void Editor::RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float* const x, float* const y, ID2D1Brush* brush) {
+	// 文字を描画
+	rt->DrawText(
+		&character->wchar,
+		1,
+		textFormat,
+		&RectF(*x, *y, *x + character->width, *y + charHeight),
+		brush);
+
+	character->x = *x;
+	character->y = *y;
+	*x += character->width;
+
+	// 改行だったら y 座標を更新する
+	if (character->wchar == '\n') {
+		*x = 0;
+		*y += charHeight;
 	}
 }
 
@@ -275,14 +295,8 @@ void Editor::OnIMEComposition(LPARAM lparam) {
 			return;
 		}
 
-		if (compositionStringLength != -1) {
-			// FIXME: エンターキーを押さずに続けて入力した時にカーソルを動かすと、以前変換した文字に重なってしまう
-			// カーソル位置を以前の位置に戻す
-			// selection.end -= compositionStringLength;
-
-			// 以前挿入した未確定文字列を削除
-			chars.erase(chars.begin() + selection.end, chars.begin() + selection.end + compositionStringLength);
-		}
+		compositionChars.clear();
+		compositionTextPos = selection.end;
 
 		// 未確定文字列を挿入
 		auto str = std::wstring(buf, size);
@@ -290,16 +304,9 @@ void Editor::OnIMEComposition(LPARAM lparam) {
 		int i = 0;
 		for (auto& c : str) {
 			auto ch = CreateChar(c);
-			chars.insert(chars.begin() + selection.end + i, ch);
+			compositionChars.push_back(ch);
 			i++;
 		}
-
-		// 未確定文字列の長さを保存
-		compositionStringLength = static_cast<int>(str.length());
-
-		// FIXME: エンターキーを押さずに続けて入力した時にカーソルを動かすと、以前変換した文字に重なってしまう
-		// カーソルを未確定文字列の長さの分進める
-		// selection.end += compositionStringLength;
 
 		delete[] buf;
 	}
@@ -308,10 +315,13 @@ void Editor::OnIMEComposition(LPARAM lparam) {
 }
 
 void Editor::OnIMEStartComposition() {
+	caret.visible = false;
+	cursorBlinkTimer.enabled = false;
 }
 
 void Editor::OnIMEEndComposition() {
 	compositionStringLength = -1;
+	compositionTextPos = -1;
 }
 
 void Editor::OnKeyDown(int keyCode) {

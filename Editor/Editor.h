@@ -61,6 +61,8 @@ private:
 	Caret caret;
 	Selection selection;
 	int compositionStringLength;
+	std::vector<Char> compositionChars;
+	int compositionTextPos;
 	
 	HWND hwnd;
 	IDWriteFactory* factory;
@@ -69,6 +71,8 @@ private:
 	Char CreateChar(wchar_t character);
 
 	void ToggleCursorVisible();
+
+	void RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float* const x, float* const y, ID2D1Brush* brush);
 public:
 	std::vector<Timer*> timers;
 
