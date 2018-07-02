@@ -129,7 +129,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			SetTimer(hwnd, timer->id, timer->elapse, nullptr);
 		}
 
-		return 1;
+		return 0;
 	}
 	else {
 		App* app = reinterpret_cast<App*>(static_cast<LONG_PTR>(
@@ -140,7 +140,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			case WM_SETCURSOR:
 				if (LOWORD(lparam) == HTCLIENT) {
 					SetCursor(LoadCursor(nullptr, IDC_IBEAM));
-					return 0;
+					return TRUE;
 				}
 				break;
 			case WM_CHAR:
@@ -203,7 +203,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 				return 0;
 			case WM_DESTROY:
 				PostQuitMessage(0);
-				return 1;
+				return 0;
 			}
 		}
 
