@@ -243,8 +243,8 @@ void Editor::OnOpenCandidate() {
 	CANDIDATEFORM form;
 	form.dwIndex = 0;
 	form.dwStyle = CFS_FORCE_POSITION;
-	form.ptCurrentPos.x = caret.x;
-	form.ptCurrentPos.y = caret.y + charHeight;
+	form.ptCurrentPos.x = static_cast<LONG>(caret.x);
+	form.ptCurrentPos.y = static_cast<LONG>(caret.y + charHeight);
 
 	ImmSetCandidateWindow(imc, &form);
 
@@ -262,11 +262,11 @@ void Editor::OnQueryCharPosition(IMECHARPOSITION* pos) {
 	pos->rcDocument = rcClient;
 
 	// 行の高さ
-	pos->cLineHeight = charHeight;
+	pos->cLineHeight = static_cast<UINT>(charHeight);
 
 	// 文字の位置をスクリーン座標で指定する
-	pos->pt.x = caret.x;
-	pos->pt.y = caret.y;
+	pos->pt.x = static_cast<LONG>(caret.x);
+	pos->pt.y = static_cast<LONG>(caret.y);
 	ClientToScreen(hwnd, &pos->pt);
 }
 
@@ -276,11 +276,6 @@ void Editor::OnIMEComposition(LPARAM lparam) {
 	if (!imc) {
 		std::wcout << L"Unable to get imm context" << std::endl;
 		return;
-	}
-
-	if (lparam & GCS_CURSORPOS) {
-		int cursor = ImmGetCompositionString(imc, GCS_CURSORPOS, NULL, 0);
-		//std::wcout << cursor << std::endl;
 	}
 
 	if (lparam & GCS_COMPSTR || lparam & GCS_RESULTSTR) {
