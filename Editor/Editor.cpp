@@ -225,13 +225,12 @@ void Editor::OnChar(wchar_t character) {
 		}
 	} else if (character == '\r') {
 		// エンターキーを押すと \r が入力されるので \n に置き換えて追加
-		//AppendChar('\n');
 		chars.insert(chars.begin() + selection.end, CreateChar('\n'));
 		selection.end++;
 	} else {
-		//AppendChar(character);
 		chars.insert(chars.begin() + selection.end, CreateChar(character));
 		selection.end++;
+		compositionTextPos = selection.end;
 	}
 }
 
