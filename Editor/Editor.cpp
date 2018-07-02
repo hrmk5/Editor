@@ -153,19 +153,18 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 		for (auto& character : chars) {
 			// 未確定文字列を描画
 			if (compositionTextPos != -1 && i == compositionTextPos) {
-				for (auto& compositionChar : compositionChars) {
-					rt->FillRectangle(
-						RectF(x, y, x + compositionChar.width, y + charHeight),
-						compositionCharBrush);
-
-					RenderChar(rt, &compositionChar, &x, &y, brush);
-				}
+				RenderCompositionText(rt, brush, compositionCharBrush, &x, &y);
 			}
 
 			// 文字を描画
 			RenderChar(rt, &character, &x, &y, brush);
 
 			i++;
+		}
+
+		// 未確定文字列が末尾にあった場合
+		if (compositionTextPos == chars.size()) {
+			RenderCompositionText(rt, brush, compositionCharBrush, &x, &y);
 		}
 
 		// キャレットを描画
@@ -207,6 +206,16 @@ void Editor::RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float*
 	if (character->wchar == '\n') {
 		*x = 0;
 		*y += charHeight;
+	}
+}
+
+void Editor::RenderCompositionText(ID2D1HwndRenderTarget* rt, ID2D1Brush* brush, ID2D1Brush* backgroundBrush, float* const x, float* const y) {
+	for (auto& compositionChar : compositionChars) {
+		rt->FillRectangle(
+			RectF(*x, *y, *x + compositionChar.width, *y + charHeight),
+			backgroundBrush);
+
+		RenderChar(rt, &compositionChar, x, y, brush);
 	}
 }
 

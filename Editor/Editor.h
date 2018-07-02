@@ -73,6 +73,7 @@ private:
 	void ToggleCursorVisible();
 
 	void RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float* const x, float* const y, ID2D1Brush* brush);
+	void RenderCompositionText(ID2D1HwndRenderTarget* rt, ID2D1Brush* brush, ID2D1Brush* backgroundBrush, float* const x, float* const y);
 public:
 	std::vector<Timer*> timers;
 
