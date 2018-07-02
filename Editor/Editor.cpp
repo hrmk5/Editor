@@ -212,7 +212,7 @@ void Editor::RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float*
 void Editor::RenderCompositionText(ID2D1HwndRenderTarget* rt, ID2D1Brush* brush, ID2D1Brush* backgroundBrush, float* const x, float* const y) {
 	for (auto& compositionChar : compositionChars) {
 		rt->FillRectangle(
-			RectF(*x, *y, *x + compositionChar.width, *y + charHeight),
+			RectF(*x, *y, *x + compositionChar.width + 1, *y + charHeight),
 			backgroundBrush);
 
 		RenderChar(rt, &compositionChar, x, y, brush);
