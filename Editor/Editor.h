@@ -60,9 +60,11 @@ private:
 	std::vector<Char> chars;
 	Caret caret;
 	Selection selection;
+	int selectionStartWhileDrag;
 	int compositionStringLength;
 	std::vector<Char> compositionChars;
 	int compositionTextPos;
+	bool dragged;
 	
 	HWND hwnd;
 	IDWriteFactory* factory;
@@ -96,4 +98,5 @@ public:
 	void OnKeyDown(int keyCode);
 	void OnKeyUp(int keyCode);
 	void OnLButtonDown(float x, float y);
+	void OnLButtonUp(float x, float y);
 };

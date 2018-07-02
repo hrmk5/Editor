@@ -138,12 +138,38 @@ void Editor::ToggleCursorVisible() {
 }
 
 void Editor::Render(ID2D1HwndRenderTarget* rt) {
+	if (dragged) {
+		// カーソルの座標を取得
+		POINT pos;
+		GetCursorPos(&pos);
+
+		// スクリーン座標なのでクライアント座標に変換
+		ScreenToClient(hwnd, &pos);
+
+		// カーソルの位置の文字のインデックスを検索
+		int index = findIndexByPosition(pos.x, pos.y);
+		if (index != -1) {
+			if (index > selection.start) {
+				selection.start = selectionStartWhileDrag;
+				selection.end = index;
+			} else if (index < selection.start) {
+				selection.end = selectionStartWhileDrag;
+				selection.start = index;
+			}
+		}
+	}
+
 	ID2D1SolidColorBrush* brush;
 	ID2D1SolidColorBrush* compositionCharBrush = nullptr;
+	ID2D1SolidColorBrush* selectionBrush = nullptr;
 	HRESULT hr = rt->CreateSolidColorBrush(ColorF(ColorF::Black), &brush);
 
 	if (SUCCEEDED(hr)) {
 		hr = rt->CreateSolidColorBrush(ColorF(ColorF::LightGray), &compositionCharBrush);
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = rt->CreateSolidColorBrush(ColorF(ColorF::CornflowerBlue), &selectionBrush);
 	}
 
 	if (SUCCEEDED(hr)) {
@@ -154,6 +180,13 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 			// 未確定文字列を描画
 			if (compositionTextPos != -1 && i == compositionTextPos) {
 				RenderCompositionText(rt, brush, compositionCharBrush, &x, &y);
+			}
+
+			// 選択範囲を描画
+			if (selection.start != selection.end && i >= selection.start && i < selection.end) {
+				rt->FillRectangle(
+					RectF(x, y, x + character.width + 1, y + charHeight),
+					selectionBrush);
 			}
 
 			// 文字を描画
@@ -186,6 +219,10 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 				caret.y = character.y;
 			}
 		}
+
+		brush->Release();
+		compositionCharBrush->Release();
+		selectionBrush->Release();
 	}
 }
 
@@ -235,11 +272,17 @@ void Editor::OnChar(wchar_t character) {
 	} else if (character == '\r') {
 		// エンターキーを押すと \r が入力されるので \n に置き換えて追加
 		chars.insert(chars.begin() + selection.end, CreateChar('\n'));
+
+		// キャレットを動かす
 		selection.end++;
+		selection.start = selection.end;
 	} else {
 		chars.insert(chars.begin() + selection.end, CreateChar(character));
-		selection.end++;
 		compositionTextPos = selection.end;
+
+		// キャレットを動かす
+		selection.end++;
+		selection.start = selection.end;
 	}
 }
 
@@ -361,6 +404,14 @@ void Editor::OnLButtonDown(float x, float y) {
 	int index = findIndexByPosition(x, y);
 	// 文字が見つかったらカーソルを動かす
 	if (index != -1) {
+		selectionStartWhileDrag = index;
+		selection.start = index;
 		selection.end = index;
 	}
+
+	dragged = true;
+}
+
+void Editor::OnLButtonUp(float x, float y) {
+	dragged = false;
 }

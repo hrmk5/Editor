@@ -157,6 +157,9 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			case WM_LBUTTONDOWN:
 				app->editor->OnLButtonDown(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
 				return 0;
+			case WM_LBUTTONUP:
+				app->editor->OnLButtonUp(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
+				return 0;
 			case WM_IME_SETCONTEXT:
 				lparam &= ~ISC_SHOWUICOMPOSITIONWINDOW;
 				return 0;
