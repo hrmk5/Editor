@@ -154,6 +154,10 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 			// 未確定文字列を描画
 			if (compositionTextPos != -1 && i == compositionTextPos) {
 				for (auto& compositionChar : compositionChars) {
+					rt->FillRectangle(
+						RectF(x, y, x + compositionChar.width, y + charHeight),
+						compositionCharBrush);
+
 					RenderChar(rt, &compositionChar, &x, &y, brush);
 				}
 			}
