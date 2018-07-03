@@ -392,6 +392,24 @@ void Editor::OnKeyDown(int keyCode) {
 			selection.start = selection.end;
 		}
 		break;
+	case VK_UP:
+	{
+		auto index = findIndexByPosition(caret.x, caret.y - charHeight + 1);
+		if (index != -1) {
+			selection.end = index;
+			selection.start = index;
+		}
+	}
+		break;
+	case VK_DOWN:
+	{
+		auto index = findIndexByPosition(caret.x, caret.y + charHeight + 1);
+		if (index != -1) {
+			selection.end = index;
+			selection.start = index;
+		}
+	}
+		break;
 	case VK_HOME:
 	{
 		bool found = false;
