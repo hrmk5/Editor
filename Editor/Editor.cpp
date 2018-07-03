@@ -392,6 +392,48 @@ void Editor::OnKeyDown(int keyCode) {
 			selection.start = selection.end;
 		}
 		break;
+	case VK_HOME:
+	{
+		bool found = false;
+		for (auto itr = chars.begin() + selection.end - 1; itr != chars.begin(); itr--) {
+			auto&& character = *itr;
+			if (character.wchar == '\n') {
+				auto index = std::distance(chars.begin(), itr);
+				selection.end = index + 1;
+				selection.start = index + 1;
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			selection.end = 0;
+			selection.start = 0;
+		}
+	}
+
+		break;
+	case VK_END:
+	{
+		bool found = false;
+		for (auto itr = chars.begin() + selection.end; itr != chars.end(); itr++) {
+			auto&& character = *itr;
+			if (character.wchar == '\n') {
+				auto index = std::distance(chars.begin(), itr);
+				selection.end = index;
+				selection.start = index;
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			selection.end = static_cast<int>(chars.size());
+			selection.start = static_cast<int>(chars.size());
+		}
+	}
+	
+		break;
 	}
 }
 
