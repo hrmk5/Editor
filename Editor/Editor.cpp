@@ -200,7 +200,7 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 			if ((selection.start < selection.end && i >= selection.start && i < selection.end) ||
 				(selection.start > selection.end && i < selection.start && i >= selection.end)) {
 				rt->FillRectangle(
-					RectF(x, y, x + character.width + 1, y + charHeight),
+					RectF(x, y, x + character.width + 1, y + charHeight + 1),
 					selectionBrush);
 			}
 
