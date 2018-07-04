@@ -480,6 +480,18 @@ void Editor::OnKeyDown(int keyCode) {
 	}
 	
 		break;
+	case VK_DELETE:
+		// 選択範囲を削除
+		if (selection.start != selection.end) {
+			DeleteSelection();
+			break;
+		}
+
+		// カーソルの後の文字を削除する
+		if (caret.index < chars.size()) {
+			chars.erase(chars.begin() + caret.index);
+		}
+		break;
 	}
 }
 
