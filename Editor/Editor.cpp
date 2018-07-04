@@ -169,13 +169,7 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 		// カーソルの位置の文字のインデックスを検索
 		int index = findIndexByPosition(pos.x, pos.y);
 		if (index != -1) {
-			if (index > selection.start) {
-				selection.start = selectionStartWhileDrag;
-				selection.end = index;
-			} else if (index < selection.start) {
-				selection.end = selectionStartWhileDrag;
-				selection.start = index;
-			}
+			MoveCaret(index, true);
 		}
 	}
 
@@ -504,9 +498,7 @@ void Editor::OnLButtonDown(float x, float y) {
 	int index = findIndexByPosition(x, y);
 	// 文字が見つかったらカーソルを動かす
 	if (index != -1) {
-		selectionStartWhileDrag = index;
-		selection.start = index;
-		selection.end = index;
+		MoveCaret(index);
 	}
 
 	dragged = true;
