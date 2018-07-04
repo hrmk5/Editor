@@ -28,6 +28,7 @@ Editor::Editor(HWND hwnd, IDWriteFactory* factory, const EditorOptions& options)
 	options(options),
 	compositionStringLength(-1),
 	compositionTextPos(-1),
+	selectionStart(-1),
 	// カーソルを点滅させるタイマー
 	cursorBlinkTimer(ID_CURSOR_BLINK_TIMER, options.cursorBlinkRateMsec, std::bind(&Editor::ToggleCursorVisible, this)) {
 }
@@ -137,6 +138,17 @@ void Editor::ToggleCursorVisible() {
 	caret.visible = !caret.visible;
 }
 
+void Editor::MoveCaret(int index, bool isSelectRange) {
+	caret.index = index;
+
+	if (isSelectRange) {
+		selection.end = index;
+	} else {
+		selection.start = index;
+		selection.end = index;
+	}
+}
+
 void Editor::Render(ID2D1HwndRenderTarget* rt) {
 	if (dragged) {
 		// カーソルの座標を取得
@@ -183,7 +195,8 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 			}
 
 			// 選択範囲を描画
-			if (selection.start != selection.end && i >= selection.start && i < selection.end) {
+			if ((selection.start < selection.end && i >= selection.start && i < selection.end) ||
+				(selection.start > selection.end && i < selection.start && i >= selection.end)) {
 				rt->FillRectangle(
 					RectF(x, y, x + character.width + 1, y + charHeight),
 					selectionBrush);
@@ -207,13 +220,13 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 				RenderCursor(rt, 0, 0, brush);
 				caret.x = 0;
 				caret.y = 0;
-			} else if (selection.end >= static_cast<signed int>(chars.size())) {
+			} else if (caret.index >= static_cast<signed int>(chars.size())) {
 				// 末尾を選択している場合
 				RenderCursor(rt, x, y, brush);
 				caret.x = x;
 				caret.y = y;
 			} else {
-				auto character = chars[selection.end];
+				auto character = chars[caret.index];
 				RenderCursor(rt, character.x, character.y, brush);
 				caret.x = character.x;
 				caret.y = character.y;
@@ -267,22 +280,20 @@ void Editor::OnChar(wchar_t character) {
 		// バックスペースキーが押された場合はカーソルの前の文字を削除する
 		if (selection.end > 0) {
 			chars.erase(chars.begin() + selection.end - 1);
-			selection.end--;
+			MoveCaret(caret.index - 1);
 		}
 	} else if (character == '\r') {
 		// エンターキーを押すと \r が入力されるので \n に置き換えて追加
 		chars.insert(chars.begin() + selection.end, CreateChar('\n'));
 
 		// キャレットを動かす
-		selection.end++;
-		selection.start = selection.end;
+		MoveCaret(caret.index + 1);
 	} else {
 		chars.insert(chars.begin() + selection.end, CreateChar(character));
 		compositionTextPos = selection.end;
 
 		// キャレットを動かす
-		selection.end++;
-		selection.start = selection.end;
+		MoveCaret(caret.index + 1);
 	}
 }
 
@@ -379,25 +390,25 @@ void Editor::OnKeyDown(int keyCode) {
 	cursorBlinkTimer.enabled = false;
 	caret.visible = true;
 
+	// シフトキーを押しているかどうか
+	bool shiftKey = GetKeyState(VK_SHIFT) < 0;
+
 	switch (keyCode) {
 	case VK_LEFT:
 		if (selection.end > 0) {
-			selection.end -= 1;
-			selection.start = selection.end;
+			MoveCaret(caret.index - 1, shiftKey);
 		}
 		break;
 	case VK_RIGHT:
 		if (selection.end < chars.size()) {
-			selection.end += 1;
-			selection.start = selection.end;
+			MoveCaret(caret.index + 1, shiftKey);
 		}
 		break;
 	case VK_UP:
 	{
 		auto index = findIndexByPosition(caret.x, caret.y - charHeight + 1);
 		if (index != -1) {
-			selection.end = index;
-			selection.start = index;
+			MoveCaret(index, shiftKey);
 		}
 	}
 		break;
@@ -405,8 +416,7 @@ void Editor::OnKeyDown(int keyCode) {
 	{
 		auto index = findIndexByPosition(caret.x, caret.y + charHeight + 1);
 		if (index != -1) {
-			selection.end = index;
-			selection.start = index;
+			MoveCaret(index, shiftKey);
 		}
 	}
 		break;
@@ -417,16 +427,14 @@ void Editor::OnKeyDown(int keyCode) {
 			auto&& character = *itr;
 			if (character.wchar == '\n') {
 				auto index = std::distance(chars.begin(), itr);
-				selection.end = index + 1;
-				selection.start = index + 1;
+				MoveCaret(index + 1, shiftKey);
 				found = true;
 				break;
 			}
 		}
 
 		if (!found) {
-			selection.end = 0;
-			selection.start = 0;
+			MoveCaret(0, shiftKey);
 		}
 	}
 
@@ -438,16 +446,14 @@ void Editor::OnKeyDown(int keyCode) {
 			auto&& character = *itr;
 			if (character.wchar == '\n') {
 				auto index = std::distance(chars.begin(), itr);
-				selection.end = index;
-				selection.start = index;
+				MoveCaret(index, shiftKey);
 				found = true;
 				break;
 			}
 		}
 
 		if (!found) {
-			selection.end = static_cast<int>(chars.size());
-			selection.start = static_cast<int>(chars.size());
+			MoveCaret(static_cast<int>(chars.size()), shiftKey);
 		}
 	}
 	

@@ -30,6 +30,7 @@ struct Selection {
 struct Caret {
 	float x;
 	float y;
+	int index;
 	bool visible;
 };
 
@@ -61,6 +62,7 @@ private:
 	Caret caret;
 	Selection selection;
 	int selectionStartWhileDrag;
+	int selectionStart;
 	int compositionStringLength;
 	std::vector<Char> compositionChars;
 	int compositionTextPos;
@@ -73,6 +75,7 @@ private:
 	Char CreateChar(wchar_t character);
 
 	void ToggleCursorVisible();
+	void MoveCaret(int index, bool isSelectRange = false);
 
 	void RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float* const x, float* const y, ID2D1Brush* brush);
 	void RenderCompositionText(ID2D1HwndRenderTarget* rt, ID2D1Brush* brush, ID2D1Brush* backgroundBrush, float* const x, float* const y);
