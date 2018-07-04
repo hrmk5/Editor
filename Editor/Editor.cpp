@@ -422,6 +422,11 @@ void Editor::OnKeyDown(int keyCode) {
 		break;
 	case VK_HOME:
 	{
+		if (caret.index == 0) {
+			MoveCaret(0, shiftKey);
+			break;
+		}
+
 		bool found = false;
 		for (auto itr = chars.begin() + selection.end - 1; itr != chars.begin(); itr--) {
 			auto&& character = *itr;
