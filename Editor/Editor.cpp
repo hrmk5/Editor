@@ -93,6 +93,14 @@ void Editor::AppendChar(wchar_t wchar) {
 	selection.end = static_cast<int>(chars.size());
 }
 
+void Editor::DeleteSelection() {
+	chars.erase(
+		chars.begin() + (selection.start < selection.end ? selection.start : selection.end),
+		chars.begin() + (selection.start < selection.end ? selection.end : selection.start));
+
+	MoveCaret((selection.start < selection.end ? selection.end : selection.start) - abs(selection.end - selection.start));
+}
+
 int Editor::findIndexByPosition(float x, float y) {
 	int index = 0;
 	for (auto&& character : chars) {
@@ -276,19 +284,28 @@ void Editor::RenderCursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brus
 }
 
 void Editor::OnChar(wchar_t character) {
+	// エンターキーを押すと character は \r になるので \n に置き換え
+	if (character == '\r')
+		character = '\n';
+
 	if (character == '\b') {
+		// 選択範囲を削除
+		if (selection.start != selection.end) {
+			DeleteSelection();
+			return;
+		}
+
 		// バックスペースキーが押された場合はカーソルの前の文字を削除する
 		if (selection.end > 0) {
 			chars.erase(chars.begin() + selection.end - 1);
 			MoveCaret(caret.index - 1);
 		}
-	} else if (character == '\r') {
-		// エンターキーを押すと \r が入力されるので \n に置き換えて追加
-		chars.insert(chars.begin() + selection.end, CreateChar('\n'));
-
-		// キャレットを動かす
-		MoveCaret(caret.index + 1);
 	} else {
+		// 選択範囲を削除
+		if (selection.start != selection.end) {
+			DeleteSelection();
+		}
+
 		chars.insert(chars.begin() + selection.end, CreateChar(character));
 		compositionTextPos = selection.end;
 
