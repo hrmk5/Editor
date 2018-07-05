@@ -101,7 +101,7 @@ void Editor::DeleteSelection() {
 	MoveCaret((selection.start < selection.end ? selection.end : selection.start) - abs(selection.end - selection.start));
 }
 
-int Editor::findIndexByPosition(float x, float y) {
+int Editor::FindIndexByPosition(float x, float y) {
 	int index = 0;
 	for (auto&& character : chars) {
 		// 同じ行かどうか
@@ -167,7 +167,7 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 		ScreenToClient(hwnd, &pos);
 
 		// カーソルの位置の文字のインデックスを検索
-		int index = findIndexByPosition(pos.x, pos.y);
+		int index = FindIndexByPosition(static_cast<float>(pos.x), static_cast<float>(pos.y));
 		if (index != -1) {
 			MoveCaret(index, true);
 		}
@@ -417,7 +417,7 @@ void Editor::OnKeyDown(int keyCode) {
 		break;
 	case VK_UP:
 	{
-		auto index = findIndexByPosition(caret.x, caret.y - charHeight + 1);
+		auto index = FindIndexByPosition(caret.x, caret.y - charHeight + 1);
 		if (index != -1) {
 			MoveCaret(index, shiftKey);
 		}
@@ -425,7 +425,7 @@ void Editor::OnKeyDown(int keyCode) {
 		break;
 	case VK_DOWN:
 	{
-		auto index = findIndexByPosition(caret.x, caret.y + charHeight + 1);
+		auto index = FindIndexByPosition(caret.x, caret.y + charHeight + 1);
 		if (index != -1) {
 			MoveCaret(index, shiftKey);
 		}
@@ -442,7 +442,7 @@ void Editor::OnKeyDown(int keyCode) {
 		for (auto itr = chars.begin() + selection.end - 1; itr != chars.begin(); itr--) {
 			auto&& character = *itr;
 			if (character.wchar == '\n') {
-				auto index = std::distance(chars.begin(), itr);
+				auto index = static_cast<int>(std::distance(chars.begin(), itr));
 				MoveCaret(index + 1, shiftKey);
 				found = true;
 				break;
@@ -461,7 +461,7 @@ void Editor::OnKeyDown(int keyCode) {
 		for (auto itr = chars.begin() + selection.end; itr != chars.end(); itr++) {
 			auto&& character = *itr;
 			if (character.wchar == '\n') {
-				auto index = std::distance(chars.begin(), itr);
+				auto index = static_cast<int>(std::distance(chars.begin(), itr));
 				MoveCaret(index, shiftKey);
 				found = true;
 				break;
@@ -495,7 +495,7 @@ void Editor::OnKeyUp(int keyCode) {
 
 void Editor::OnLButtonDown(float x, float y) {
 	// クリックされた位置から文字のインデックスを探す
-	int index = findIndexByPosition(x, y);
+	int index = FindIndexByPosition(x, y);
 	// 文字が見つかったらカーソルを動かす
 	if (index != -1) {
 		MoveCaret(index);

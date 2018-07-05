@@ -89,7 +89,7 @@ public:
 	void SetText(const std::wstring& str);
 	void AppendChar(wchar_t wchar);
 	void DeleteSelection();
-	int findIndexByPosition(float x, float y);
+	int FindIndexByPosition(float x, float y);
 
 	void Render(ID2D1HwndRenderTarget* rt);
 	void RenderCursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brush* brush);
