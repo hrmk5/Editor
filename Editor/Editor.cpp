@@ -17,6 +17,7 @@ EditorOptions DefaultEditorOptions() {
 	options.cursorWidth = 2;
 	options.fontName = L"Yu Gothic";
 	options.fontSize = 17.0f;
+	options.scrollAmount = 25.0f;
 
 	return options;
 }
@@ -29,6 +30,10 @@ Editor::Editor(HWND hwnd, IDWriteFactory* factory, const EditorOptions& options)
 	compositionStringLength(-1),
 	compositionTextPos(-1),
 	selectionStart(-1),
+	maxX(0),
+	maxY(0),
+	offsetX(0),
+	offsetY(0),
 	// カーソルを点滅させるタイマー
 	cursorBlinkTimer(ID_CURSOR_BLINK_TIMER, options.cursorBlinkRateMsec, std::bind(&Editor::ToggleCursorVisible, this)) {
 }
@@ -200,12 +205,17 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 			if ((selection.start < selection.end && i >= selection.start && i < selection.end) ||
 				(selection.start > selection.end && i < selection.start && i >= selection.end)) {
 				rt->FillRectangle(
-					RectF(x, y, x + character.width + 1, y + charHeight + 1),
+					RectF(x, y + offsetY, x + character.width + 1, y + offsetY + charHeight + 1),
 					selectionBrush);
 			}
 
 			// 文字を描画
 			RenderChar(rt, &character, &x, &y, brush);
+
+			maxY = y;
+			if (x > maxX) {
+				maxX = x;
+			}
 
 			i++;
 		}
@@ -247,7 +257,7 @@ void Editor::RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float*
 		&character->wchar,
 		1,
 		textFormat,
-		&RectF(*x, *y, *x + character->width, *y + charHeight),
+		&RectF(*x, *y + offsetY, *x + character->width, *y + offsetY + charHeight),
 		brush);
 
 	character->x = *x;
@@ -264,7 +274,7 @@ void Editor::RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float*
 void Editor::RenderCompositionText(ID2D1HwndRenderTarget* rt, ID2D1Brush* brush, ID2D1Brush* backgroundBrush, float* const x, float* const y) {
 	for (auto& compositionChar : compositionChars) {
 		rt->FillRectangle(
-			RectF(*x, *y, *x + compositionChar.width + 1, *y + charHeight),
+			RectF(*x, *y + offsetY, *x + compositionChar.width + 1, *y + offsetY + charHeight),
 			backgroundBrush);
 
 		RenderChar(rt, &compositionChar, x, y, brush);
@@ -273,7 +283,7 @@ void Editor::RenderCompositionText(ID2D1HwndRenderTarget* rt, ID2D1Brush* brush,
 
 void Editor::RenderCursor(ID2D1HwndRenderTarget* rt, float x, float y, ID2D1Brush* brush) {
 	rt->FillRectangle(
-		RectF(x, y, x + options.cursorWidth, y + charHeight),
+		RectF(x, y + offsetY, x + options.cursorWidth, y + offsetY + charHeight),
 		brush);
 }
 
@@ -340,7 +350,7 @@ void Editor::OnQueryCharPosition(IMECHARPOSITION* pos) {
 
 	// 文字の位置をスクリーン座標で指定する
 	pos->pt.x = static_cast<LONG>(caret.x);
-	pos->pt.y = static_cast<LONG>(caret.y);
+	pos->pt.y = static_cast<LONG>(caret.y + offsetY);
 	ClientToScreen(hwnd, &pos->pt);
 }
 
@@ -506,4 +516,8 @@ void Editor::OnLButtonDown(float x, float y) {
 
 void Editor::OnLButtonUp(float x, float y) {
 	dragged = false;
+}
+
+void Editor::OnMouseWheel(short delta) {
+	offsetY += delta > 0 ? options.scrollAmount : -options.scrollAmount;
 }

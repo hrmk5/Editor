@@ -160,6 +160,9 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 			case WM_LBUTTONUP:
 				app->editor->OnLButtonUp(static_cast<float>(GET_X_LPARAM(lparam)), static_cast<float>(GET_Y_LPARAM(lparam)));
 				return 0;
+			case WM_MOUSEWHEEL:
+				app->editor->OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wparam));
+				return 0;
 			case WM_IME_SETCONTEXT:
 				lparam &= ~ISC_SHOWUICOMPOSITIONWINDOW;
 				return 0;

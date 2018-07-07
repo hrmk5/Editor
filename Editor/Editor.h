@@ -46,6 +46,7 @@ struct EditorOptions {
 	float cursorWidth; // カーソルの幅
 	std::wstring fontName; // フォントの名前
 	float fontSize; // フォントサイズ
+	float scrollAmount; // スクロール量
 };
 
 EditorOptions DefaultEditorOptions();
@@ -67,6 +68,10 @@ private:
 	std::vector<Char> compositionChars;
 	int compositionTextPos;
 	bool dragged;
+	float maxX;
+	float maxY;
+	float offsetX;
+	float offsetY;
 	
 	HWND hwnd;
 	IDWriteFactory* factory;
@@ -103,4 +108,5 @@ public:
 	void OnKeyUp(int keyCode);
 	void OnLButtonDown(float x, float y);
 	void OnLButtonUp(float x, float y);
+	void OnMouseWheel(short delta);
 };
