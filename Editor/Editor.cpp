@@ -519,5 +519,21 @@ void Editor::OnLButtonUp(float x, float y) {
 }
 
 void Editor::OnMouseWheel(short delta) {
-	offsetY += delta > 0 ? options.scrollAmount : -options.scrollAmount;
+	RECT rect;
+	GetClientRect(hwnd, &rect);
+
+	auto width = rect.right;
+	auto height = rect.bottom;
+
+	std::wcout << L"maxY + offset = " << maxY + offsetY << std::endl;
+
+	// 下方向へのスクロール
+	if (delta < 0 && maxY + offsetY + height > height) {
+		offsetY -= options.scrollAmount;
+	}
+
+	// 上方向へのスクロール
+	if (delta > 0 && offsetY < 0) {
+		offsetY += options.scrollAmount;
+	}
 }
