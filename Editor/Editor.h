@@ -2,6 +2,19 @@
 
 #include "stdafx.h"
 
+class RectE {
+public:
+	float x;
+	float y;
+	float width;
+	float height;
+
+	RectE();
+	RectE(float x, float y, float width, float height);
+
+	D2D1_RECT_F ToRectF();
+};
+
 class EditorException : public std::exception {
 private:
 	std::string message;
@@ -41,6 +54,11 @@ struct Char {
 	wchar_t wchar;
 };
 
+struct Scrollbar {
+	RectE thumb;
+	RectE bar;
+};
+
 struct EditorOptions {
 	int cursorBlinkRateMsec; // カーソルの点滅速度 (ミリ秒)
 	float cursorWidth; // カーソルの幅
@@ -72,6 +90,7 @@ private:
 	float maxY;
 	float offsetX;
 	float offsetY;
+	Scrollbar horizontalScrollbar;
 	
 	HWND hwnd;
 	IDWriteFactory* factory;
@@ -84,6 +103,7 @@ private:
 
 	void RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float* const x, float* const y, ID2D1Brush* brush);
 	void RenderCompositionText(ID2D1HwndRenderTarget* rt, ID2D1Brush* brush, ID2D1Brush* backgroundBrush, float* const x, float* const y);
+	void RenderScrollbar(ID2D1HwndRenderTarget* rt);
 public:
 	std::vector<Timer*> timers;
 

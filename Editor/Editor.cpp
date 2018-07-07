@@ -4,6 +4,24 @@
 
 using namespace D2D1;
 
+RectE::RectE() :
+	x(0),
+	y(0),
+	width(0),
+	height(0) {
+}
+
+RectE::RectE(float x, float y, float width, float height) :
+	x(x),
+	y(y),
+	width(width),
+	height(height) {
+}
+
+D2D1_RECT_F RectE::ToRectF() {
+	return RectF(x, y, x + width, y + height);
+}
+
 Timer::Timer(UINT id, UINT elapse, const TimerFunc & func) :
 	id(id),
 	elapse(elapse),
@@ -245,6 +263,9 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 			}
 		}
 
+		// スクロールバーを描画
+		RenderScrollbar(rt);
+
 		brush->Release();
 		compositionCharBrush->Release();
 		selectionBrush->Release();
@@ -278,6 +299,31 @@ void Editor::RenderCompositionText(ID2D1HwndRenderTarget* rt, ID2D1Brush* brush,
 			backgroundBrush);
 
 		RenderChar(rt, &compositionChar, x, y, brush);
+	}
+}
+
+void Editor::RenderScrollbar(ID2D1HwndRenderTarget* rt) {
+	ID2D1SolidColorBrush* brush;
+	HRESULT hr = rt->CreateSolidColorBrush(ColorF(ColorF::Gray), &brush);
+
+	if (SUCCEEDED(hr)) {
+		auto size = rt->GetSize();
+
+		// 垂直スクロールバー
+
+		// 文章全体の高さの表示されている高さの割合
+		auto percentageViewingHeight = size.height / (maxY + size.height);
+		// スクロールバーの位置
+		auto scrollbarY = -offsetY * percentageViewingHeight;
+
+		horizontalScrollbar.bar = RectE(size.width - 10, 0, 10, size.height);
+		horizontalScrollbar.thumb = RectE(size.width - 10, scrollbarY, 10, size.height * percentageViewingHeight);
+
+		rt->FillRectangle(
+			horizontalScrollbar.thumb.ToRectF(),
+			brush);
+
+		// TODO: 水平スクロールバー
 	}
 }
 
@@ -524,8 +570,6 @@ void Editor::OnMouseWheel(short delta) {
 
 	auto width = rect.right;
 	auto height = rect.bottom;
-
-	std::wcout << L"maxY + offset = " << maxY + offsetY << std::endl;
 
 	// 下方向へのスクロール
 	if (delta < 0 && maxY + offsetY + height > height) {
