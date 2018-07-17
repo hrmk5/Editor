@@ -194,6 +194,7 @@ LRESULT CALLBACK App::WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpa
 				UINT width = LOWORD(lparam);
 				UINT height = HIWORD(lparam);
 				app->OnResize(width, height);
+				app->editor->OnResize(width, height);
 			}
 				return 0;
 			case WM_TIMER:

@@ -129,4 +129,5 @@ public:
 	void OnLButtonDown(float x, float y);
 	void OnLButtonUp(float x, float y);
 	void OnMouseWheel(short delta);
+	void OnResize(unsigned int width, unsigned int height);
 };

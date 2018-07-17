@@ -273,6 +273,14 @@ void Editor::Render(ID2D1HwndRenderTarget* rt) {
 }
 
 void Editor::RenderChar(ID2D1HwndRenderTarget* rt, Char* const character, float* const x, float* const y, ID2D1Brush* brush) {
+	auto size = rt->GetSize();
+
+	// 文字が画面からはみでる場合は y 座標を更新する
+	if (*x + character->width >= horizontalScrollbar.bar.x) {
+		*x = 0;
+		*y += charHeight;
+	}
+
 	// 文字を描画
 	rt->DrawText(
 		&character->wchar,
@@ -580,4 +588,7 @@ void Editor::OnMouseWheel(short delta) {
 	if (delta > 0 && offsetY < 0) {
 		offsetY += options.scrollAmount;
 	}
+}
+
+void Editor::OnResize(unsigned int width, unsigned int height) {
 }
