@@ -365,7 +365,7 @@ void Editor::OnChar(wchar_t character) {
 		}
 
 		chars.insert(chars.begin() + selection.end, CreateChar(character));
-		compositionTextPos = selection.end;
+		compositionTextPos = selection.end + 1;
 
 		// キャレットを動かす
 		MoveCaret(caret.index + 1);
